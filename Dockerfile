@@ -1,38 +1,32 @@
-# Stage 1: Build the Go application
-FROM golang:1.22.0 AS builder
+# Use the official Golang image as a base image
+FROM golang:1.22.0-alpine AS builder
 
-# Set the Current Working Directory inside the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum files first for dependency resolution
+# Copy the Go module files
 COPY go.mod go.sum ./
 
-# Download all dependencies
+# Download dependencies
 RUN go mod download
 
-# Copy the rest of the application code
+# Copy the source code
 COPY . .
 
-# Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api ./cmd/api
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o myapp .
 
-# Stage 2: Build a small image with only the built binary
-#FROM gcr.io/distroless/base-debian12
+# Use a minimal alpine image for the final stage
+FROM alpine:latest
 
-FROM debian:bookworm-slim
-# Set working directory
-WORKDIR /app
+# Set the working directory
+WORKDIR /root/
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/api .
+COPY --from=builder /app/myapp .
 
-RUN apt-get update && apt-get install -y \
-    bash \
-    && rm -rf /var/lib/apt/lists/*
-
-# Expose the application port (if the app listens on a specific port)
+# Expose the port your app runs on
 EXPOSE 8080
-ENTRYPOINT ["/bin/bash"]
 
 # Command to run the application
-CMD ["/app/api"]
+CMD ["./myapp"]

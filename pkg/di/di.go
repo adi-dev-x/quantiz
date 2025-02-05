@@ -25,21 +25,25 @@ func InitializeEvent(conf config.Config) (*bootserver.ServerHttp, error) {
 		log.Fatalln("Issue during migration 🧘: ", err.Error())
 	}
 
+	admjwt := middleware.MiddlewareJWT{Config: conf}
+
 	userRepository := user.NewRepository(sqlDB)
 	myService := services.MyService{Config: conf}
 	userService := user.NewService(userRepository, myService)
-	validate := validator.New()
-	admjwt := middleware.MiddlewareJWT{Config: conf}
 	userHandler := user.NewHandler(userService, myService, admjwt, conf)
+
+	validate := validator.New()
+
 	adminRepository := admin.NewRepository(sqlDB)
 	myService2 := services.MyService{Config: conf}
 	adminService := admin.NewService(adminRepository, myService2)
 	adminHandler := admin.NewHandler(adminService, myService, admjwt, validate)
 
 	commonRepository := common.NewRepository(sqlDB)
-	//myService2 := services.MyService{Config: conf}
-	commonService := common.NewService(commonRepository, myService2)
+	myService3 := services.MyService{Config: conf}
+	commonService := common.NewService(commonRepository, myService3)
 	commonHandler := common.NewHandler(commonService, myService, admjwt, validate)
+
 	serverHttp := bootserver.NewServerHttp(*commonHandler, *userHandler, *adminHandler)
 
 	return serverHttp, nil

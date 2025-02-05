@@ -11,16 +11,15 @@ services:
       - postgres
       - redis
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
+      POSTGRES_USER: adwaithadithyan
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: mock
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       REDIS_HOST: redis
       REDIS_PORT: 6379
     volumes:
-      - ./pkg/config/.env:/app/pkg/config/.env   
-      - ./pkg/templates:/app/pkg/templates 
+      - ./pkg/config/.env:/app/pkg/config/.env
     networks:
       - app-network
 
@@ -29,9 +28,9 @@ services:
     image: postgres:15
     container_name: postgres_db
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: adwaithadithyan
       POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: godb
+      POSTGRES_DB: mock
     ports:
       - "5432:5432"
     volumes:
@@ -50,7 +49,6 @@ services:
 
 volumes:
   postgres_data:
-  
 
 networks:
   app-network:

@@ -67,6 +67,7 @@ func (h *Handler) AddBlog(c *fiber.Ctx) error {
 
 	fmt.Println("this is in the handler AddProduct")
 	var request model.Coupon
+
 	if err := c.BodyParser(&request); err != nil {
 		return h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
 	}

@@ -48,7 +48,7 @@ func (s *service) Register(ctx context.Context, request handlers.Register) error
 	}
 
 	existingUser, err := s.repo.Login(ctx, request.Email)
-	if !existingUser.Verified {
+	if !existingUser.Verified && existingUser.Name != "" {
 		return nil
 	}
 
