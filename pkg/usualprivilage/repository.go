@@ -13,7 +13,7 @@ type Repository interface {
 	//Listing(ctx context.Context) ([]model.Coupon, error)
 	Login(ctx context.Context, email string) (model.UserDetails, error)
 	VerifyUser(ctx context.Context, email string) error
-
+	QueryExecute(ctx context.Context, query string) ([]model.Blog, error)
 	//Product listing
 
 }
@@ -28,8 +28,51 @@ func NewRepository(sqlDB *sql.DB) Repository {
 	}
 }
 
-// // list orders
+func (r *repository) ListCategoriesBlog(ctx context.Context, id int64) ([]model.Category, error) {
+	query := `SELECT c.* FROM blog_categories bc LEFT JOIN categories c 
+             ON bc.category_id = c.id WHERE bc.blog_id = $1;`
+	var categories []model.Category
+	rows, err := r.sql.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, fmt.Errorf("could not execute query: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var category model.Category
+		if err := category.Scan(rows); err != nil {
+			return nil, fmt.Errorf("could not scan blog: %v", err)
+		}
+		categories = append(categories, category)
+	}
+	return categories, nil
+}
 
+func (r *repository) QueryExecute(ctx context.Context, query string) ([]model.Blog, error) {
+	rows, err := r.sql.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("could not execute query: %v", err)
+	}
+	defer rows.Close()
+	var blogs []model.Blog
+
+	for rows.Next() {
+		var blog model.Blog
+		if err := blog.Scan(rows); err != nil {
+			return nil, fmt.Errorf("could not scan blog: %v", err)
+		}
+		categories, err := r.ListCategoriesBlog(ctx, blog.ID)
+		if err != nil {
+			fmt.Printf("could not list categories blog: %v", err)
+		}
+		fmt.Println("printing categories ", categories)
+		blog.Categories = categories
+		blogs = append(blogs, blog)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %v", err)
+	}
+	return blogs, nil
+}
 func (r *repository) VerifyUser(ctx context.Context, email string) error {
 	fmt.Println("this is in the repository VerifyUser")
 
@@ -68,4 +111,37 @@ func (r *repository) Login(ctx context.Context, email string) (model.UserDetails
 	fmt.Println("the data !!!! ", user)
 
 	return user, nil
+}
+func (r *repository) AddBlog(ctx context.Context, blog model.Blog) (int, error) {
+	// Define the SQL query
+	query := `
+        INSERT INTO blogs (title, descriptions, content, user_id, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id
+    `
+
+	// Handle NULL descriptions
+	var descriptions sql.NullString
+	if blog.Descriptions != nil {
+		descriptions = sql.NullString{String: *blog.Descriptions, Valid: true}
+	} else {
+		descriptions = sql.NullString{Valid: false}
+	}
+
+	// Execute the query
+	var id int
+	err := r.sql.QueryRowContext(ctx, query,
+		blog.Title,     // $1
+		descriptions,   // $2
+		blog.Content,   // $3
+		blog.UserID,    // $4
+		blog.CreatedAt, // $5
+		blog.UpdatedAt, // $6
+	).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("could not insert blog: %v", err)
+	}
+
+	// Return the ID of the newly inserted blog
+	return id, nil
 }

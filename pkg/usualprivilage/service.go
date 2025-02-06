@@ -7,13 +7,14 @@ import (
 	"gorm.io/gorm"
 	services "myproject/pkg/client"
 	"myproject/pkg/common/utility"
+	db "myproject/pkg/database"
 	"myproject/pkg/handlers"
 )
 
 type Service interface {
 	Register(ctx context.Context, request handlers.Register) error
 	Login(ctx context.Context, request handlers.Login) error
-	//Listing(ctx context.Context) ([]model.Coupon, error)
+	Listing(ctx context.Context, conditions []db.WhereCondition, pageCount int) (interface{}, error)
 	OtpLogin(ctx context.Context, request handlers.Otp) error
 
 	///product listing
@@ -35,8 +36,6 @@ func NewService(repo Repository, services services.Services) Service {
 		services: services,
 	}
 }
-
-// //All orders
 
 func (s *service) Register(ctx context.Context, request handlers.Register) error {
 	var err error
@@ -116,7 +115,21 @@ func (s *service) OtpLogin(ctx context.Context, request handlers.Otp) error {
 	//return s.repo.Login(ctx, request)
 }
 
-// func (s *service) Listing(ctx context.Context) ([]model.Product, error) {
+func (s *service) Listing(ctx context.Context, conditions []db.WhereCondition, pageCount int) (interface{}, error) {
 
-//		return s.repo.Listing(ctx)
-//	}
+	query, Joins := db.QueryBuilder(conditions, "JOIN")
+	if Joins != "" {
+		query = "SELECT blogs.*,users.name FROM blogs JOIN users ON blogs.user_id = users.id " + query
+	} else {
+		query = "SELECT blogs.*,users.name FROM blogs JOIN users ON blogs.user_id = users.id " + query
+	}
+	fmt.Println("Generated query !!!", query)
+	res, err := s.repo.QueryExecute(ctx, query)
+	if err != nil {
+		fmt.Println("this is in the service error querying blogs", err.Error())
+		return nil, fmt.Errorf("blogs not found: %w", err)
+	}
+
+	return res, nil
+	//	return s.repo.Listing(ctx)
+}

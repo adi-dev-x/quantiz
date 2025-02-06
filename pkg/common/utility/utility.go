@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"math/rand"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -57,4 +59,8 @@ func IsValidPassword(password string) bool {
 	}
 
 	return true
+}
+func UniqueId() int64 {
+	rand.Seed(time.Now().UnixNano())
+	return time.Now().UnixNano() + int64(rand.Intn(1000))
 }

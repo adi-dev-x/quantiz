@@ -39,12 +39,14 @@ func (h *Handler) MountRoutes(app *fiber.App) {
 	applicantApi.Post("/register", h.Register)
 	applicantApi.Post("/login", h.Login)
 	applicantApi.Post("/otpLogin", h.OtpLogin)
-	applicantApi.Use(h.adminjw.AdminAuthMiddleware())
-	{
-		//applicantApi.Post("/deleteBlog", h.DeleteBlog)
-		applicantApi.Post("/AddBlog", h.AddBlog)
 
-	}
+	//applicantApi.Use(h.adminjw.AdminAuthMiddleware())
+	//{
+	//applicantApi.Post("/deleteBlog", h.DeleteBlog)
+	//	applicantApi.Post("/AddBlog", h.AddBlog)
+	applicantApi.Get("/listBlog", h.Listing)
+
+	//}
 }
 
 func (h *Handler) respondWithError(c *fiber.Ctx, code int, msg interface{}) error {
@@ -62,7 +64,60 @@ func (h *Handler) respondWithData(c *fiber.Ctx, code int, message interface{}, d
 		"data": data,
 	})
 }
+func (h *Handler) Listing(c *fiber.Ctx) error {
+	fmt.Println("inside the app")
+	ctx := c.Context()
+	var conditions []db.WhereCondition
+	pageCount := c.QueryInt("page")
+	if pageCount < 1 {
+		pageCount = 1
+	}
+	if c.Query("id") != "" {
+		conditions = append(conditions, db.WhereCondition{
+			Key:       "id",
+			Value:     c.Query("id"),
+			Condition: "=",
+			Table:     "blogs",
+			Joins:     "",
+		})
+	}
+	if c.Query("user_id") != "" {
+		conditions = append(conditions, db.WhereCondition{
+			Key:       "id",
+			Value:     c.Query("user_id"),
+			Condition: "=",
+			Table:     "users",
+			Joins:     "",
+		})
+	}
+	if c.Query("category") != "" {
+		conditions = append(conditions, db.WhereCondition{
+			Key:       "name",
+			Value:     "'" + c.Query("category") + "'",
+			Condition: "=",
+			Table:     "categories",
+			Joins:     "JOIN user_categories ON users.id = user_categories.user_id JOIN categories ON user_categories.category_id = categories.id ",
+		})
+	}
 
+	if c.Query("name") != "" {
+		conditions = append(conditions, db.WhereCondition{
+			Key:       "title",
+			Value:     "'%" + c.Query("name") + "%'",
+			Condition: "ILIKE",
+			Table:     "blogs",
+		})
+	}
+
+	blogs, err := h.service.Listing(ctx, conditions, pageCount)
+	if err != nil {
+		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch products", "details": err.Error()})
+	}
+	//fmt.Println("this is the data ", products)
+	return h.respondWithData(c, http.StatusOK, "success", blogs)
+
+	//return nil
+}
 func (h *Handler) AddBlog(c *fiber.Ctx) error {
 
 	fmt.Println("this is in the handler AddProduct")
@@ -74,6 +129,7 @@ func (h *Handler) AddBlog(c *fiber.Ctx) error {
 	if len(errVal) > 0 {
 		return h.respondWithError(c, http.StatusBadRequest, map[string]interface{}{"invalid-request": errVal})
 	}
+
 	// Validate request fields
 
 	//ctx := c.Context()
@@ -165,16 +221,3 @@ func (h *Handler) OtpLogin(c *fiber.Ctx) error {
 	}
 	return h.respondWithData(c, http.StatusOK, "success", nil)
 }
-
-//func (h *Handler) Listing(c *fiber.Ctx) error {
-//	ctx := c.Context()
-//
-//	products, err := h.service.Listing(ctx)
-//	if err != nil {
-//		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch products", "details": err.Error()})
-//	}
-//	fmt.Println("this is the data ", products)
-//	return h.respondWithData(c, http.StatusOK, "success", products)
-//}
-
-// BrandListing
