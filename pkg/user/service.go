@@ -26,7 +26,7 @@ func NewService(repo Repository, services services.Services) Service {
 func (s *service) AddBlog(ctx context.Context, request handlers.AddBlog, username string) error {
 
 	request.ID = utility.UniqueId()
-	//get user id
+
 	userId, err := s.repo.GetUserId(ctx, username)
 	if err != nil {
 		return err
