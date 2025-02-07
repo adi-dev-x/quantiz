@@ -46,6 +46,10 @@ type Category struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
+type BlogCategory struct {
+	BlogId     int64 `json:"blogId"`
+	CategoryId int64 `json:"categoryId"`
+}
 
 func (c *Category) Scan(rows *sql.Rows) error {
 	err := rows.Scan(&c.ID, &c.Name)
