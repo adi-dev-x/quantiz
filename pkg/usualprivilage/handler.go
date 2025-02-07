@@ -9,11 +9,9 @@ import (
 	"myproject/pkg/middleware"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	services "myproject/pkg/client"
 	db "myproject/pkg/database"
-	"myproject/pkg/model"
-
-	"github.com/gofiber/fiber/v2"
 	"net/http"
 )
 
@@ -43,7 +41,7 @@ func (h *Handler) MountRoutes(app *fiber.App) {
 	//applicantApi.Use(h.adminjw.AdminAuthMiddleware())
 	//{
 	//applicantApi.Post("/deleteBlog", h.DeleteBlog)
-	//	applicantApi.Post("/AddBlog", h.AddBlog)
+
 	applicantApi.Get("/listBlog", h.Listing)
 
 	//}
@@ -113,34 +111,9 @@ func (h *Handler) Listing(c *fiber.Ctx) error {
 	if err != nil {
 		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch products", "details": err.Error()})
 	}
-	//fmt.Println("this is the data ", products)
+
 	return h.respondWithData(c, http.StatusOK, "success", blogs)
 
-	//return nil
-}
-func (h *Handler) AddBlog(c *fiber.Ctx) error {
-
-	fmt.Println("this is in the handler AddProduct")
-	var request model.Coupon
-	if err := c.BodyParser(&request); err != nil {
-		return h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
-	}
-	errVal := request.Valid()
-	if len(errVal) > 0 {
-		return h.respondWithError(c, http.StatusBadRequest, map[string]interface{}{"invalid-request": errVal})
-	}
-
-	// Validate request fields
-
-	//ctx := c.Context()
-	//if err := h.service.Addcoupon(ctx, request); err != nil {
-	//	fmt.Println("this is the error !!!!!", err.Error())
-	//
-	//	return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	//}
-	fmt.Println("this is in the handler Register")
-
-	return h.respondWithData(c, http.StatusOK, "success", nil)
 }
 
 func (h *Handler) Register(c *fiber.Ctx) error {

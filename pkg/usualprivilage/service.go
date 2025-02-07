@@ -16,13 +16,6 @@ type Service interface {
 	Login(ctx context.Context, request handlers.Login) error
 	Listing(ctx context.Context, conditions []db.WhereCondition, pageCount int) (interface{}, error)
 	OtpLogin(ctx context.Context, request handlers.Otp) error
-
-	///product listing
-	//ProductListing(ctx context.Context) ([]model.ProductListingUsers, error)
-	//PlowListing(ctx context.Context, id string) ([]model.ProductListingUsers, error)
-
-	///orders
-	/// Singlevendor
 }
 
 type service struct {

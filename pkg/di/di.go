@@ -26,13 +26,11 @@ func InitializeEvent(conf config.Config) (*bootserver.ServerHttp, error) {
 	}
 
 	admjwt := middleware.MiddlewareJWT{Config: conf}
-
+	validate := validator.New()
 	userRepository := user.NewRepository(sqlDB)
 	myService := services.MyService{Config: conf}
 	userService := user.NewService(userRepository, myService)
-	userHandler := user.NewHandler(userService, myService, admjwt, conf)
-
-	validate := validator.New()
+	userHandler := user.NewHandler(userService, myService, admjwt, conf, validate)
 
 	adminRepository := admin.NewRepository(sqlDB)
 	myService2 := services.MyService{Config: conf}
