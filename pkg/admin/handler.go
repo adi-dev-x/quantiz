@@ -1,12 +1,11 @@
 package admin
 
 import (
-	"fmt"
 	"github.com/go-playground/validator/v10"
-	"log"
 	"myproject/pkg/common/utility"
 	"myproject/pkg/handlers"
 	"myproject/pkg/middleware"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -35,11 +34,10 @@ func (h *Handler) MountRoutes(app *fiber.App) {
 	//applicantApi := engine.Group(basePath)
 	applicantApi := app.Group("/admin")
 	applicantApi.Post("/register", h.Register)
-	applicantApi.Post("/login", h.Login)
-	applicantApi.Post("/otpLogin", h.OtpLogin)
+
 	applicantApi.Use(h.adminjw.AdminAuthMiddleware())
 	{
-		//applicantApi.Post("/deleteBlog", h.DeleteBlog)
+		applicantApi.Get("/deleteBlog/:id", h.DeleteBlog)
 
 	}
 }
@@ -70,7 +68,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 	if utility.IsValidPassword(request.Password) {
 		return h.respondWithError(c, http.StatusBadRequest, map[string]interface{}{"invalid-request": "is not a valid password"})
 	}
-	log.Println("this is sucesssss")
+
 	ctx := c.Context()
 	if err := h.service.Register(ctx, request); err != nil {
 		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -93,61 +91,22 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 
 	return h.respondWithData(c, http.StatusOK, "success", nil)
 }
-func (h *Handler) Login(c *fiber.Ctx) error {
-	// Parse request body into VendorRegisterRequest
-	fmt.Println("this is in the handler Register")
-	var request handlers.Login
-	if err := utility.ParseAndValidate(c, &request, h.validator); err != nil {
-		return h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
-	}
 
-	ctx := c.Context()
-	if err := h.service.Login(ctx, request); err != nil {
-		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-	fmt.Println("this is in the handler Register")
-	fmt.Println("this is in the handler Register")
-	token, err := h.adminjw.GenerateAdminToken(request.Email)
+func (h *Handler) DeleteBlog(c *fiber.Ctx) error {
+
+	idStr := c.Params("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"token-generation": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid blog ID",
+		})
 	}
 
-	fmt.Println("User logged in successfully")
-	return h.respondWithData(c, http.StatusOK, "success", map[string]string{"token": token})
-}
-func (h *Handler) OtpLogin(c *fiber.Ctx) error {
-	// Parse request body into VendorRegisterRequest
-	fmt.Println("this is in the handler OtpLogin")
-	var request handlers.Otp
+	ctx := c.Context()
 
-	if err := utility.ParseAndValidate(c, &request, h.validator); err != nil {
+	if err := h.service.DeleteBlog(ctx, c.Locals("username").(string), id); err != nil {
 		return h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
 	}
-	fmt.Println("this is request", request)
 
-	// Respond with success
-	storedData, err := db.GetRedis(request.Email)
-	fmt.Println("this is the keyy!!!!!", storedData, err)
-	if storedData != request.Otp {
-		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": "wrong otp"})
-
-	}
-	ctx := c.Context()
-	if err := h.service.OtpLogin(ctx, request); err != nil {
-		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
 	return h.respondWithData(c, http.StatusOK, "success", nil)
 }
-
-//func (h *Handler) Listing(c *fiber.Ctx) error {
-//	ctx := c.Context()
-//
-//	products, err := h.service.Listing(ctx)
-//	if err != nil {
-//		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch products", "details": err.Error()})
-//	}
-//	fmt.Println("this is the data ", products)
-//	return h.respondWithData(c, http.StatusOK, "success", products)
-//}
-
-// BrandListing

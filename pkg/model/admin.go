@@ -13,6 +13,7 @@ type UserDetails struct {
 	Password string `json:"password"`
 	Phone    string `json:"phone"`
 	Verified bool   `json:"verified"`
+	UserType string `json:"user_type"`
 }
 type AdminLoginRequest struct {
 	Email    string `json:"email"`

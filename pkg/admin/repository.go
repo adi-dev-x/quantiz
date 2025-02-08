@@ -10,12 +10,10 @@ import (
 
 type Repository interface {
 	Register(ctx context.Context, request handlers.Register) error
-	//Listing(ctx context.Context) ([]model.Coupon, error)
 	Login(ctx context.Context, email string) (model.UserDetails, error)
 	VerifyUser(ctx context.Context, email string) error
-
-	//Product listing
-
+	GetUserDetails(ctx context.Context, username string) (string, error)
+	DeleteBlog(ctx context.Context, id int64) error
 }
 
 type repository struct {
@@ -28,11 +26,7 @@ func NewRepository(sqlDB *sql.DB) Repository {
 	}
 }
 
-// // list orders
-
 func (r *repository) VerifyUser(ctx context.Context, email string) error {
-	fmt.Println("this is in the repository VerifyUser")
-
 	query := `UPDATE users SET verified = TRUE WHERE email = $1`
 	_, err := r.sql.ExecContext(ctx, query, email)
 	if err != nil {
@@ -43,7 +37,7 @@ func (r *repository) VerifyUser(ctx context.Context, email string) error {
 }
 
 func (r *repository) Register(ctx context.Context, request handlers.Register) error {
-	fmt.Println("this is in the repository Register")
+
 	query := `INSERT INTO users (name, email, password,phone,user_type) VALUES ($1, $2, $3, $4,$5)`
 	_, err := r.sql.ExecContext(ctx, query, request.Name, request.Email, request.Password, request.Phone, "admin")
 	if err != nil {
@@ -54,7 +48,6 @@ func (r *repository) Register(ctx context.Context, request handlers.Register) er
 }
 
 func (r *repository) Login(ctx context.Context, email string) (model.UserDetails, error) {
-	fmt.Println("theee !!!!!!!!!!!  LLLLoginnnnnn  ", email)
 	query := `SELECT name, email, password,verified FROM users WHERE email = $1`
 
 	var user model.UserDetails
@@ -68,4 +61,30 @@ func (r *repository) Login(ctx context.Context, email string) (model.UserDetails
 	fmt.Println("the data !!!! ", user)
 
 	return user, nil
+}
+func (r *repository) GetUserDetails(ctx context.Context, username string) (string, error) {
+	var userType string
+
+	query := "SELECT user_type FROM users WHERE email = $1"
+	err := r.sql.QueryRowContext(ctx, query, username).Scan(&userType)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("user not found")
+		}
+		return "", fmt.Errorf("failed to get user ID: %w", err)
+	}
+
+	return userType, nil
+}
+func (r *repository) DeleteBlog(ctx context.Context, id int64) error {
+	query := "DELETE FROM blogs where id = $1 "
+
+	fmt.Println(query)
+
+	_, err := r.sql.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to update blog: %w", err)
+	}
+
+	return nil
 }

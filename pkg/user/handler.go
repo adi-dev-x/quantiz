@@ -46,6 +46,7 @@ func (h *Handler) MountRoutes(app *fiber.App) {
 		///list orders
 		applicantApi.Post("/addBlog", h.AddBlog)
 		applicantApi.Patch("/addBlog/:id", h.UpdateBlog)
+		applicantApi.Get("/deleteBlog/:id", h.DeleteBlog)
 
 	}
 
@@ -89,6 +90,24 @@ func (h *Handler) UpdateBlog(c *fiber.Ctx) error {
 
 	return h.respondWithData(c, http.StatusOK, "success", nil)
 }
+func (h *Handler) DeleteBlog(c *fiber.Ctx) error {
+
+	idStr := c.Params("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid blog ID",
+		})
+	}
+
+	ctx := c.Context()
+
+	if err := h.service.DeleteBlog(ctx, c.Locals("username").(string), id); err != nil {
+		return h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
+	}
+
+	return h.respondWithData(c, http.StatusOK, "success", nil)
+}
 
 func (h *Handler) AddBlog(c *fiber.Ctx) error {
 
@@ -106,5 +125,3 @@ func (h *Handler) AddBlog(c *fiber.Ctx) error {
 
 	return h.respondWithData(c, http.StatusOK, "success", nil)
 }
-
-// /this is testing

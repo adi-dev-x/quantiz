@@ -15,6 +15,7 @@ type Repository interface {
 	InsertBlogCategoryAddBlog(ctx context.Context, blog handlers.AddBlog, id int64, tx *sql.Tx) error
 	QueryExecute(ctx context.Context, query string) ([]model.Blog, error)
 	UpdateBlog(ctx context.Context, id int64, req handlers.UpdateBlogRequest) error
+	DeleteBlog(ctx context.Context, id int64) error
 }
 
 type repository struct {
@@ -48,70 +49,43 @@ func (r *repository) QueryExecute(ctx context.Context, query string) ([]model.Bl
 	return blogs, nil
 }
 func (r *repository) UpdateBlog(ctx context.Context, id int64, req handlers.UpdateBlogRequest) error {
-
 	query := "UPDATE blogs SET "
 	updates := []string{}
 	values := []interface{}{}
+	paramCount := 1
+
 	if req.Title != nil {
-		updates = append(updates, "title = ?")
+		updates = append(updates, fmt.Sprintf("title = $%d", paramCount))
 		values = append(values, *req.Title)
+		paramCount++
 	}
 	if req.Descriptions != nil {
-		updates = append(updates, "descriptions = ?")
+		updates = append(updates, fmt.Sprintf("descriptions = $%d", paramCount))
 		values = append(values, *req.Descriptions)
-	}
-	if req.Author != nil {
-		updates = append(updates, "author = ?")
-		values = append(values, *req.Author)
+		paramCount++
 	}
 	if req.Content != nil {
-		updates = append(updates, "content = ?")
+		updates = append(updates, fmt.Sprintf("content = $%d", paramCount))
 		values = append(values, *req.Content)
+		paramCount++
 	}
 
 	if len(updates) == 0 {
 		return fmt.Errorf("no fields provided for update")
 	}
 
-	query += strings.Join(updates, ", ") + " WHERE id = ?"
+	query += strings.Join(updates, ", ") + fmt.Sprintf(" WHERE id = $%d", paramCount)
 	values = append(values, id)
-
+	fmt.Println(query)
+	fmt.Println(values)
 	_, err := r.sql.ExecContext(ctx, query, values...)
 	if err != nil {
 		return fmt.Errorf("failed to update blog: %w", err)
 	}
 
-	if req.Categories != nil {
-		err = r.updateBlogCategories(ctx, id, req.Categories)
-		if err != nil {
-			return fmt.Errorf("failed to update blog categories: %w", err)
-		}
-	}
-
 	return nil
 }
-func (r *repository) updateBlogCategories(ctx context.Context, blogID int64, categories []int64) error {
-	_, err := r.sql.ExecContext(ctx, "DELETE FROM blog_categories WHERE blog_id = ?", blogID)
-	if err != nil {
-		return fmt.Errorf("failed to delete existing categories: %w", err)
-	}
-	query := "INSERT INTO blog_categories (blog_id, category_id) VALUES "
-	values := []interface{}{}
-	for i, categoryID := range categories {
-		if i > 0 {
-			query += ", "
-		}
-		query += "(?, ?)"
-		values = append(values, blogID, categoryID)
-	}
 
-	_, err = r.sql.ExecContext(ctx, query, values...)
-	if err != nil {
-		return fmt.Errorf("failed to insert new categories: %w", err)
-	}
-
-	return nil
-}
 func (r *repository) GetUserId(ctx context.Context, email string) (int64, error) {
 	var userID int64
 
@@ -126,6 +100,7 @@ func (r *repository) GetUserId(ctx context.Context, email string) (int64, error)
 
 	return userID, nil
 }
+
 func (r *repository) InsertBlogCategoryAddBlog(ctx context.Context, blog handlers.AddBlog, id int64, tx *sql.Tx) error {
 	query := `INSERT INTO blog_categories (blog_id, category_id) VALUES `
 	values := []interface{}{}
@@ -182,6 +157,19 @@ func (r *repository) AddBlog(ctx context.Context, blog handlers.AddBlog) error {
 	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteBlog(ctx context.Context, id int64) error {
+	query := "DELETE FROM blogs where id = $1 "
+
+	fmt.Println(query)
+
+	_, err := r.sql.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to update blog: %w", err)
 	}
 
 	return nil
