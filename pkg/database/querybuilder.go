@@ -25,11 +25,13 @@ func QueryBuilder(where []WhereCondition, typeQuery string) (string, string) {
 		if typeQuery == "JOIN" {
 			condition := value.Table + "." + value.Key + " " + value.Condition + " " + value.Value + ""
 			queryParts = append(queryParts, condition)
+		} else {
+			condition := value.Key + " " + value.Condition + " " + value.Value + ""
+			queryParts = append(queryParts, condition)
 		}
 		Joins = Joins + value.Joins
 	}
 
-	// Combine conditions with AND
 	query := Joins + "WHERE " + strings.Join(queryParts, " AND ")
 
 	return query, Joins

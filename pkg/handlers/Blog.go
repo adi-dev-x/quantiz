@@ -9,3 +9,10 @@ type AddBlog struct {
 	Content      string  `json:"content" validate:"required"`
 	Categories   []int64 `json:"categories" validate:"required"`
 }
+type UpdateBlogRequest struct {
+	Title        *string `json:"title"`
+	Descriptions *string `json:"descriptions"`
+	Author       *string `json:"author"`
+	Content      *string `json:"content"`
+	Categories   []int64 `json:"categories"`
+}

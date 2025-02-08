@@ -6,6 +6,7 @@ import (
 	"myproject/pkg/common/utility"
 	"myproject/pkg/handlers"
 	"myproject/pkg/middleware"
+	"strconv"
 
 	// db "myproject/pkg/database"
 	services "myproject/pkg/client"
@@ -44,6 +45,7 @@ func (h *Handler) MountRoutes(app *fiber.App) {
 
 		///list orders
 		applicantApi.Post("/addBlog", h.AddBlog)
+		applicantApi.Patch("/addBlog/:id", h.UpdateBlog)
 
 	}
 
@@ -64,18 +66,39 @@ func (h *Handler) respondWithData(c *fiber.Ctx, code int, message interface{}, d
 		"data": data,
 	})
 }
+func (h *Handler) UpdateBlog(c *fiber.Ctx) error {
+
+	idStr := c.Params("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid blog ID",
+		})
+	}
+	var updateReq handlers.UpdateBlogRequest
+	if err := c.BodyParser(&updateReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+	ctx := c.Context()
+	// Call the repository to update the blog
+	if err := h.service.UpdateBlog(ctx, updateReq, c.Locals("username").(string), id); err != nil {
+		return h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
+	}
+
+	return h.respondWithData(c, http.StatusOK, "success", nil)
+}
 
 func (h *Handler) AddBlog(c *fiber.Ctx) error {
 
-	fmt.Println("this is in the handler AddProduct")
-	fmt.Println("this is in the handler AddBlog username", c.Locals("username"))
 	var request handlers.AddBlog
 
 	if err := utility.ParseAndValidate(c, &request, h.validator); err != nil {
 		return h.respondWithError(c, http.StatusBadRequest, map[string]string{"request-parse": err.Error()})
 	}
 	ctx := c.Context()
-	if err := h.service.AddBlog(ctx, request); err != nil {
+	if err := h.service.AddBlog(ctx, request, c.Locals("username").(string)); err != nil {
 		return h.respondWithError(c, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
