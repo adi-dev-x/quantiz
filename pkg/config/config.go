@@ -15,19 +15,16 @@ type Config struct {
 	PGDBName     string `mapstructure:"PG_DB_NAME" validate:"required"`
 	PgPort       string `mapstructure:"PG_PORT" validate:"required"`
 
-	Host         string `mapstructure:"HOST" validate:"required"`
-	ServerPort   string `mapstructure:"SERVER_PORT" validate:"required"`
-	SMTPemail    string `mapstructure:"EMAIL" validate:"required,email"`
-	Password     string `mapstructure:"PASSWORD" validate:"required"`
-	AdJWTKey     string `mapstructure:"adminjwtkey" validate:"required"`
-	VnJWTKey     string `mapstructure:"vendorjwtkey" validate:"required"`
-	Razor_ID     string `mapstructure:"RAZORPAY_KEY_ID" validate:"required"`
-	Razor_SECRET string `mapstructure:"RAZORPAY_SECRET" validate:"required"`
+	Host       string `mapstructure:"HOST" validate:"required"`
+	ServerPort string `mapstructure:"SERVER_PORT" validate:"required"`
+	SMTPemail  string `mapstructure:"EMAIL" validate:"required,email"`
+	Password   string `mapstructure:"PASSWORD" validate:"required"`
+	AdJWTKey   string `mapstructure:"adminjwtkey" validate:"required"`
 }
 
 var envs = []string{
 	"PG_USERNAME", "PG_PASSWORD", "PG_SSL_MODE", "PG_DBMS_NAME", "PG_HOST",
-	"PG_DRIVER_NAME", "PG_DB_NAME", "PG_PORT", "HOST", "SERVER_PORT", "EMAIL", "PASSWORD", "adminjwtkey", "VnJWTKey", "RAZORPAY_KEY_ID", "RAZORPAY_SECRET",
+	"PG_DRIVER_NAME", "PG_DB_NAME", "PG_PORT", "HOST", "SERVER_PORT", "EMAIL", "PASSWORD", "adminjwtkey",
 }
 
 func LoadConfig() (Config, error) {
