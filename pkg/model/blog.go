@@ -22,11 +22,12 @@ func (b *Blog) Scan(rows *sql.Rows) error {
 	err := rows.Scan(
 		&b.ID,
 		&b.Title,
+		&descriptions,
 		&b.Content,
+		&b.UserID,
 		&b.CreatedAt,
 		&b.UpdatedAt,
-		&b.UserID,
-		&descriptions,
+
 		&b.Author,
 	)
 	if err != nil {
